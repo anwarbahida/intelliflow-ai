@@ -33,8 +33,8 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-function safePath(path: string) {
-  return path.startsWith("/") && !path.startsWith("//") ? path : "/dashboard";
+function safePath(path?: string) {
+  return path && path.startsWith("/") && !path.startsWith("//") ? path : "/dashboard";
 }
 
 function AuthPage() {
