@@ -12,10 +12,13 @@ import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    mode: search.mode === "signup" ? "signup" : "login",
-    redirect: typeof search.redirect === "string" ? search.redirect : "",
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { mode?: "signup" | "login"; redirect?: string } => ({
+    mode: search["mode"] === "signup" ? "signup" : "login",
+    redirect: typeof search["redirect"] === "string" ? search["redirect"] : "",
   }),
+
   head: () => ({
     meta: [
       { title: "Connexion — Lexia" },
