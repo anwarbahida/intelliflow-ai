@@ -77,8 +77,8 @@ export async function runFeature(args: {
   userId: string;
   feature: AiFeatureKey;
   content: string;
-  question?: string;
-  extraSystem?: string;
+  question?: string | undefined;
+  extraSystem?: string | undefined;
 }) {
   const feature = AI_FEATURES[args.feature];
   if (!feature) throw new AiError("Fonctionnalité inconnue.", 400);
