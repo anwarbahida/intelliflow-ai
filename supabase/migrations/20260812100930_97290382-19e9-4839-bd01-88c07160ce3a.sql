@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.protect_profile_billing() FROM PUBLIC, anon, authenticated;
