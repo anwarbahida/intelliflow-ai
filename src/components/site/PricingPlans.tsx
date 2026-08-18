@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export type Plan = {
@@ -52,6 +53,7 @@ export function PricingPlans({
 }) {
   const [cycle, setCycle] = useState<"monthly" | "yearly">("monthly");
   const { data: plans, isLoading } = usePlans();
+  const { t } = useI18n();
 
   return (
     <div className="space-y-8">
@@ -68,12 +70,12 @@ export function PricingPlans({
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
-              {value === "monthly" ? "Mensuel" : "Annuel"}
+              {value === "monthly" ? t("pricing.monthlyLabel") : t("pricing.yearlyLabel")}
             </button>
           ))}
         </div>
         <p className="text-xs text-muted-foreground">
-          {cycle === "yearly" ? "2 mois offerts sur l'engagement annuel" : "Sans engagement, annulable à tout moment"}
+          {cycle === "yearly" ? t("pricing.yearlyNote") : t("pricing.monthlyNote")}
         </p>
       </div>
 
@@ -109,23 +111,23 @@ export function PricingPlans({
               <CardHeader className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="font-display text-lg font-semibold">{plan.name}</span>
-                  {plan.is_featured && <Badge className="bg-gradient-primary border-0">Recommandé</Badge>}
-                  {isCurrent && !plan.is_featured && <Badge variant="secondary">Plan actuel</Badge>}
+                  {plan.is_featured && <Badge className="bg-gradient-primary border-0">{t("pricing.recommended")}</Badge>}
+                  {isCurrent && !plan.is_featured && <Badge variant="secondary">{t("pricing.currentPlan")}</Badge>}
                 </div>
                 <p className="min-h-10 text-sm text-muted-foreground">{plan.tagline}</p>
                 <div className="flex items-end gap-1">
                   <span className="font-display text-4xl font-bold">
-                    {isEnterprise ? "Sur devis" : `${price} €`}
+                    {isEnterprise ? t("pricing.customQuote") : `${price} €`}
                   </span>
                   {!isEnterprise && (
                     <span className="pb-1 text-sm text-muted-foreground">
-                      /{cycle === "monthly" ? "mois" : "an"}
+                      {cycle === "monthly" ? t("pricing.perMonth") : t("pricing.perYear")}
                     </span>
                   )}
                 </div>
                 <div className="flex items-center gap-1.5 text-sm font-medium text-primary">
                   <Sparkles className="size-3.5" />
-                  {plan.credits.toLocaleString("fr-FR")} crédits IA
+                  {t("pricing.creditsAIPerMonth", { credits: plan.credits.toLocaleString() })}
                 </div>
               </CardHeader>
               <CardContent className="flex flex-1 flex-col gap-5">
@@ -146,12 +148,18 @@ export function PricingPlans({
                     disabled={isCurrent}
                     className="w-full"
                   >
-                    {isCurrent ? "Plan actif" : isEnterprise ? "Parler à un expert" : `Choisir ${plan.name}`}
+                    {isCurrent
+                      ? t("pricing.active")
+                      : isEnterprise
+                        ? t("pricing.talkToExpert")
+                        : t("pricing.choose", { name: plan.name })}
                   </Button>
                 ) : (
                   <Button asChild variant={plan.is_featured ? "default" : "outline"} className="w-full">
                     <Link to="/auth" search={{ mode: "signup", redirect: "" }}>
-                      {plan.code === "free" ? "Commencer gratuitement" : `Choisir ${plan.name}`}
+                      {plan.code === "free"
+                        ? t("pricing.startFree")
+                        : t("pricing.choose", { name: plan.name })}
                     </Link>
                   </Button>
                 )}

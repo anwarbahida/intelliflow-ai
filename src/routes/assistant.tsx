@@ -19,14 +19,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { chatAssistant } from "@/lib/ai.functions";
+import { useI18n } from "@/lib/i18n";
 
 type Message = { role: "user" | "assistant"; content: string };
-
-const SUGGESTIONS = [
-  "Quels sont les risques principaux dans mes derniers documents ?",
-  "Résume-moi l'essentiel de mon dernier contrat.",
-  "Quelles actions dois-je prioriser cette semaine ?",
-];
 
 export const Route = createFileRoute("/assistant")({
   ssr: false,
@@ -51,6 +46,8 @@ export const Route = createFileRoute("/assistant")({
 
 function AssistantPage() {
   const send = useServerFn(chatAssistant);
+  const { t, tList } = useI18n();
+  const suggestions = tList("assistant.suggestions");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [docId, setDocId] = useState<string>("all");
@@ -101,17 +98,15 @@ function AssistantPage() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="font-display text-3xl font-bold">Assistant IA</h1>
-            <p className="mt-2 text-muted-foreground">
-              Votre copilote connaît vos documents. 1 crédit par message.
-            </p>
+            <h1 className="font-display text-3xl font-bold">{t("assistant.title")}</h1>
+            <p className="mt-2 text-muted-foreground">{t("assistant.subtitle")}</p>
           </div>
           <Select value={docId} onValueChange={setDocId}>
             <SelectTrigger className="w-64">
-              <SelectValue placeholder="Contexte" />
+              <SelectValue placeholder={t("assistant.context")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tous mes documents</SelectItem>
+              <SelectItem value="all">{t("assistant.allDocuments")}</SelectItem>
               {documents.data?.map((d) => (
                 <SelectItem key={d.id} value={d.id}>
                   {d.title}
@@ -128,11 +123,9 @@ function AssistantPage() {
                 <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-gradient-primary shadow-glow">
                   <Sparkles className="size-5 text-primary-foreground" />
                 </span>
-                <p className="text-sm text-muted-foreground">
-                  Posez votre première question à Lexia.
-                </p>
+                <p className="text-sm text-muted-foreground">{t("assistant.firstQuestion")}</p>
                 <div className="flex flex-wrap justify-center gap-2">
-                  {SUGGESTIONS.map((s) => (
+                  {suggestions.map((s) => (
                     <Button key={s} variant="outline" size="sm" onClick={() => submit(s)}>
                       {s}
                     </Button>
@@ -154,7 +147,7 @@ function AssistantPage() {
             ))}
             {ask.isPending && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="size-4 animate-spin" /> Lexia réfléchit…
+                <Loader2 className="size-4 animate-spin" /> {t("assistant.thinking")}
               </div>
             )}
           </CardContent>
@@ -165,7 +158,7 @@ function AssistantPage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             rows={2}
-            placeholder="Votre message…"
+            placeholder={t("assistant.placeholder")}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();

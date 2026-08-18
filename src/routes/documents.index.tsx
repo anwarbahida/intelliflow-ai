@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/documents/")({
   ssr: false,
@@ -44,6 +45,7 @@ function DocumentsPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [fileName, setFileName] = useState<string | null>(null);
+  const { t } = useI18n();
 
   const documents = useQuery({
     queryKey: ["documents"],
@@ -63,7 +65,7 @@ function DocumentsPage() {
       const userId = userData.user?.id;
       if (!userId) throw new Error("Session expirée.");
       const clean = content.trim();
-      if (clean.length < 40) throw new Error("Le contenu doit contenir au moins 40 caractères.");
+      if (clean.length < 40) throw new Error(t("documents.contentTooShort"));
       const { data, error } = await supabase
         .from("documents")
         .insert({
@@ -81,7 +83,7 @@ function DocumentsPage() {
       return data.id as string;
     },
     onSuccess: (id) => {
-      toast.success("Document importé");
+      toast.success(t("documents.imported"));
       setOpen(false);
       setTitle("");
       setContent("");
@@ -98,7 +100,7 @@ function DocumentsPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Document supprimé");
+      toast.success(t("documents.deleted"));
       queryClient.invalidateQueries({ queryKey: ["documents"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -106,7 +108,7 @@ function DocumentsPage() {
 
   async function onPickFile(file: File) {
     if (file.size > 1_500_000) {
-      toast.error("Fichier trop volumineux (max 1,5 Mo de texte).");
+      toast.error(t("documents.fileTooBig"));
       return;
     }
     const text = await file.text();
@@ -120,43 +122,43 @@ function DocumentsPage() {
       <div className="space-y-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="font-display text-3xl font-bold">Mes documents</h1>
-            <p className="mt-2 text-muted-foreground">
-              Importez un texte ou un fichier, puis lancez les analyses IA.
-            </p>
+            <h1 className="font-display text-3xl font-bold">{t("documents.title")}</h1>
+            <p className="mt-2 text-muted-foreground">{t("documents.subtitle")}</p>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button>
-                <Plus className="mr-1.5 size-4" /> Nouveau document
+                <Plus className="mr-1.5 size-4" /> {t("documents.newDocument")}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Importer un document</DialogTitle>
+                <DialogTitle>{t("documents.importDocument")}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="doc-title">Titre</Label>
+                  <Label htmlFor="doc-title">{t("documents.titleLabel")}</Label>
                   <Input
                     id="doc-title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Contrat de prestation — Acme"
+                    placeholder={t("documents.titlePlaceholder")}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="doc-content">Contenu</Label>
+                  <Label htmlFor="doc-content">{t("documents.contentLabel")}</Label>
                   <Textarea
                     id="doc-content"
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     rows={10}
-                    placeholder="Collez ici le texte du contrat, rapport ou dossier à analyser…"
+                    placeholder={t("documents.contentPlaceholder")}
                     className="font-mono text-xs"
                   />
                   <p className="text-xs text-muted-foreground">
-                    {content.trim().split(/\s+/).filter(Boolean).length} mots
+                    {t("documents.words", {
+                      count: content.trim().split(/\s+/).filter(Boolean).length,
+                    })}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
@@ -171,7 +173,7 @@ function DocumentsPage() {
                     }}
                   />
                   <Button type="button" variant="outline" onClick={() => fileRef.current?.click()}>
-                    Charger un fichier texte
+                    {t("documents.importTextFile")}
                   </Button>
                   {fileName && <span className="text-xs text-muted-foreground">{fileName}</span>}
                   <Button
@@ -179,7 +181,7 @@ function DocumentsPage() {
                     disabled={create.isPending}
                     onClick={() => create.mutate()}
                   >
-                    {create.isPending ? "Import…" : "Importer et analyser"}
+                    {create.isPending ? t("documents.importing") : t("documents.importAndAnalyze")}
                   </Button>
                 </div>
               </div>
@@ -210,11 +212,11 @@ function DocumentsPage() {
                       {doc.title}
                     </Link>
                     <p className="line-clamp-2 text-sm text-muted-foreground">
-                      {doc.summary ?? "Aucune analyse pour le moment."}
+                      {doc.summary ?? t("documents.noSummary")}
                     </p>
                     <div className="flex items-center gap-2 pt-1">
                       <Badge variant="secondary" className="font-mono text-xs">
-                        {doc.word_count} mots
+                        {t("documents.words", { count: doc.word_count })}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
                         {new Date(doc.created_at).toLocaleDateString("fr-FR")}
@@ -224,7 +226,7 @@ function DocumentsPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label="Supprimer"
+                    aria-label={t("documents.deleteLabel")}
                     onClick={() => remove.mutate(doc.id)}
                   >
                     <Trash2 className="size-4 text-muted-foreground" />
@@ -237,12 +239,10 @@ function DocumentsPage() {
           <Card>
             <CardContent className="flex flex-col items-center gap-3 p-12 text-center">
               <FileText className="size-8 text-muted-foreground" />
-              <p className="font-display text-lg font-semibold">Aucun document</p>
-              <p className="max-w-sm text-sm text-muted-foreground">
-                Importez votre premier contrat ou rapport pour découvrir les analyses IA de Lexia.
-              </p>
+              <p className="font-display text-lg font-semibold">{t("documents.emptyTitle")}</p>
+              <p className="max-w-sm text-sm text-muted-foreground">{t("documents.emptyText")}</p>
               <Button onClick={() => setOpen(true)}>
-                <Plus className="mr-1.5 size-4" /> Importer un document
+                <Plus className="mr-1.5 size-4" /> {t("documents.importFirst")}
               </Button>
             </CardContent>
           </Card>

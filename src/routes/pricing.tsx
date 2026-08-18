@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { PricingPlans } from "@/components/site/PricingPlans";
 import { SiteFooter, SiteHeader } from "@/components/site/SiteChrome";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/pricing")({
 });
 
 function PricingPage() {
+  const { t } = useI18n();
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
@@ -27,13 +29,8 @@ function PricingPage() {
         <div className="hero-glow" aria-hidden />
         <div className="mx-auto max-w-6xl space-y-12">
           <div className="mx-auto max-w-2xl text-center">
-            <h1 className="font-display text-4xl font-bold sm:text-5xl">
-              Payez à l'usage, pas à l'abonnement inutile
-            </h1>
-            <p className="mt-5 text-lg text-muted-foreground">
-              Chaque plan inclut un volume de crédits IA. Une analyse coûte entre 1 et 10 crédits,
-              toujours affichés avant lancement.
-            </p>
+            <h1 className="font-display text-4xl font-bold sm:text-5xl">{t("pricing.title")}</h1>
+            <p className="mt-5 text-lg text-muted-foreground">{t("pricing.subtitle")}</p>
           </div>
           <PricingPlans />
         </div>

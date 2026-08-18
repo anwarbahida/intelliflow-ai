@@ -15,7 +15,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { analyzeDocument } from "@/lib/ai.functions";
-import { AI_FEATURES, featureLabel, type AiFeatureKey } from "@/lib/ai/features";
+import { useI18n, featureLabelKey } from "@/lib/i18n";
+import { AI_FEATURES, type AiFeatureKey } from "@/lib/ai/features";
 
 const RUNNABLE: AiFeatureKey[] = ["summary", "extract", "qa", "risk", "actions", "finance", "report"];
 
@@ -44,6 +45,7 @@ function DocumentDetail() {
   const { id } = Route.useParams();
   const queryClient = useQueryClient();
   const runAnalysis = useServerFn(analyzeDocument);
+  const { t } = useI18n();
   const [question, setQuestion] = useState("");
   const [active, setActive] = useState<string | null>(null);
 
@@ -76,7 +78,7 @@ function DocumentDetail() {
   const run = useMutation({
     mutationFn: async (feature: AiFeatureKey) => {
       if (feature === "qa" && question.trim().length < 5) {
-        throw new Error("Posez une question d'au moins 5 caractères.");
+        throw new Error(t("documentDetail.questionTooShort"));
       }
       return runAnalysis({
         data: {
@@ -88,12 +90,12 @@ function DocumentDetail() {
     },
     onMutate: (feature) => setActive(feature),
     onSuccess: (result) => {
-      toast.success(`Analyse terminée (${result.credits} crédits)`);
+      toast.success(t("documentDetail.analysisDone", { credits: result.credits }));
       queryClient.invalidateQueries({ queryKey: ["analyses", id] });
       queryClient.invalidateQueries({ queryKey: ["document", id] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
     },
-    onError: (e: Error) => toast.error(e.message || "L'analyse a échoué."),
+    onError: (e: Error) => toast.error(e.message || t("documentDetail.analysisFailed")),
     onSettled: () => setActive(null),
   });
 
@@ -110,9 +112,9 @@ function DocumentDetail() {
       <AppShell>
         <Card>
           <CardContent className="space-y-4 p-12 text-center">
-            <p className="font-display text-lg font-semibold">Document introuvable</p>
+            <p className="font-display text-lg font-semibold">{t("documentDetail.notFound")}</p>
             <Button asChild variant="outline">
-              <Link to="/documents">Retour aux documents</Link>
+              <Link to="/documents">{t("documentDetail.backToDocuments")}</Link>
             </Button>
           </CardContent>
         </Card>
@@ -126,23 +128,25 @@ function DocumentDetail() {
         <div className="space-y-3">
           <Button asChild variant="ghost" size="sm" className="-ml-2">
             <Link to="/documents">
-              <ArrowLeft className="mr-1.5 size-4" /> Documents
+              <ArrowLeft className="mr-1.5 size-4" /> {t("documentDetail.backToDocuments")}
             </Link>
           </Button>
           <h1 className="font-display text-3xl font-bold">{doc.data.title}</h1>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="font-mono text-xs">
-              {doc.data.word_count} mots
+              {t("dashboard.words", { count: doc.data.word_count })}
             </Badge>
             <span className="text-xs text-muted-foreground">
-              Importé le {new Date(doc.data.created_at).toLocaleDateString("fr-FR")}
+              {t("documents.importedOn", {
+                date: new Date(doc.data.created_at).toLocaleDateString(),
+              })}
             </span>
           </div>
         </div>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Lancer une analyse IA</CardTitle>
+            <CardTitle className="text-base">{t("documentDetail.runAnalysis")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-wrap gap-2">
@@ -161,8 +165,10 @@ function DocumentDetail() {
                     ) : (
                       <Sparkles className="mr-1.5 size-3.5" />
                     )}
-                    {feature.label}
-                    <span className="ml-1.5 font-mono text-xs opacity-70">{feature.credits} cr.</span>
+                    {t(featureLabelKey(key))}
+                    <span className="ml-1.5 font-mono text-xs opacity-70">
+                      {feature.credits} cr.
+                    </span>
                   </Button>
                 );
               })}
@@ -171,13 +177,13 @@ function DocumentDetail() {
               <Input
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                placeholder="Posez une question sur ce document…"
+                placeholder={t("documentDetail.questionPlaceholder")}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !run.isPending) run.mutate("qa");
                 }}
               />
               <Button variant="secondary" disabled={run.isPending} onClick={() => run.mutate("qa")}>
-                Interroger (1 cr.)
+                {t("documentDetail.askQuestion")}
               </Button>
             </div>
           </CardContent>
@@ -185,8 +191,10 @@ function DocumentDetail() {
 
         <Tabs defaultValue="analyses">
           <TabsList>
-            <TabsTrigger value="analyses">Analyses ({analyses.data?.length ?? 0})</TabsTrigger>
-            <TabsTrigger value="content">Contenu</TabsTrigger>
+            <TabsTrigger value="analyses">
+              {t("documentDetail.analysesTab", { count: analyses.data?.length ?? 0 })}
+            </TabsTrigger>
+            <TabsTrigger value="content">{t("documentDetail.contentTab")}</TabsTrigger>
           </TabsList>
           <TabsContent value="analyses" className="space-y-4 pt-4">
             {analyses.data?.length ? (
@@ -194,11 +202,14 @@ function DocumentDetail() {
                 <Card key={item.id}>
                   <CardHeader className="pb-2">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <CardTitle className="text-base">{item.title ?? featureLabel(item.kind)}</CardTitle>
+                      <CardTitle className="text-base">
+                        {item.title ?? t(featureLabelKey(item.kind))}
+                      </CardTitle>
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary">{featureLabel(item.kind)}</Badge>
+                        <Badge variant="secondary">{t(featureLabelKey(item.kind))}</Badge>
                         <span className="font-mono text-xs text-muted-foreground">
-                          {item.credits_cost} cr. · {new Date(item.created_at).toLocaleString("fr-FR")}
+                          {t("credits.short", { credits: item.credits_cost })} ·{" "}
+                          {new Date(item.created_at).toLocaleString()}
                         </span>
                       </div>
                     </div>
@@ -216,7 +227,7 @@ function DocumentDetail() {
             ) : (
               <Card>
                 <CardContent className="p-10 text-center text-sm text-muted-foreground">
-                  Aucune analyse encore. Choisissez une action ci-dessus.
+                  {t("documentDetail.noAnalysisYet")}
                 </CardContent>
               </Card>
             )}

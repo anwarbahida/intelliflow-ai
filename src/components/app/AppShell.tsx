@@ -7,19 +7,24 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useProfile, planLimits } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
-const nav = [
-  { label: "Tableau de bord", to: "/dashboard" },
-  { label: "Documents", to: "/documents" },
-  { label: "Assistant", to: "/assistant" },
+const baseNav = [
+  { labelKey: "nav.dashboard", to: "/dashboard" },
+  { labelKey: "nav.documents", to: "/documents" },
+  { labelKey: "nav.assistant", to: "/assistant" },
 ] as const;
+
+const adminNavItem = { labelKey: "nav.admin", to: "/admin" } as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { data } = useProfile();
   const profile = data?.profile;
   const limits = planLimits(profile?.plan);
   const { pathname } = useLocation();
+  const { t } = useI18n();
+  const nav = data?.isAdmin ? [...baseNav, adminNavItem] : baseNav;
 
   return (
     <div className="min-h-screen bg-background">
@@ -34,10 +39,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                   to={item.to}
                   className={cn(
                     "rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted hover:text-foreground",
-                    pathname.startsWith(item.to) ? "bg-muted text-foreground" : "text-muted-foreground",
+                    pathname.startsWith(item.to)
+                      ? "bg-muted text-foreground"
+                      : "text-muted-foreground",
                   )}
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                 </Link>
               ))}
             </nav>
@@ -45,12 +52,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="gap-1.5">
               <Sparkles className="size-3.5 text-primary" />
-              {profile?.credits ?? 0} crédits
+              {t("credits.remaining", { credits: profile?.credits ?? 0 })}
             </Badge>
             <Badge className="hidden sm:inline-flex">{limits.label}</Badge>
             <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={() => supabase.auth.signOut()}>
-              Déconnexion
+              {t("nav.logout")}
             </Button>
           </div>
         </div>
@@ -64,7 +71,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 pathname.startsWith(item.to) ? "bg-muted text-foreground" : "text-muted-foreground",
               )}
             >
-              {item.label}
+              {t(item.labelKey)}
             </Link>
           ))}
         </nav>

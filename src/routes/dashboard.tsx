@@ -9,7 +9,8 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile, planLimits } from "@/hooks/useProfile";
-import { AI_FEATURE_LIST, featureLabel } from "@/lib/ai/features";
+import { useI18n, featureLabelKey, featureDescriptionKey } from "@/lib/i18n";
+import { AI_FEATURE_LIST } from "@/lib/ai/features";
 
 export const Route = createFileRoute("/dashboard")({
   ssr: false,
@@ -38,6 +39,7 @@ function Dashboard() {
   const limits = planLimits(profile?.plan);
   const total = (profile?.credits ?? 0) + (profile?.credits_used ?? 0);
   const used = profile?.credits_used ?? 0;
+  const { t } = useI18n();
 
   const documents = useQuery({
     queryKey: ["documents", "dashboard"],
@@ -71,21 +73,19 @@ function Dashboard() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="font-display text-3xl font-bold">
-              Bonjour {profile?.full_name?.split(" ")[0] ?? ""} 👋
+              {t("dashboard.greeting", { name: profile?.full_name?.split(" ")[0] ?? "" })} 👋
             </h1>
-            <p className="mt-2 text-muted-foreground">
-              Lancez une analyse IA ou consultez votre consommation de crédits.
-            </p>
+            <p className="mt-2 text-muted-foreground">{t("dashboard.subtitle")}</p>
           </div>
           <div className="flex gap-2">
             <Button asChild>
               <Link to="/documents">
-                <Plus className="mr-1.5 size-4" /> Nouveau document
+                <Plus className="mr-1.5 size-4" /> {t("dashboard.newDocument")}
               </Link>
             </Button>
             <Button asChild variant="outline">
               <Link to="/assistant">
-                <MessageSquare className="mr-1.5 size-4" /> Assistant
+                <MessageSquare className="mr-1.5 size-4" /> {t("dashboard.assistant")}
               </Link>
             </Button>
           </div>
@@ -95,44 +95,49 @@ function Dashboard() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <Gauge className="size-4" /> Crédits restants
+                <Gauge className="size-4" /> {t("dashboard.creditsLeft")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="font-display text-3xl font-bold">{profile?.credits ?? 0}</p>
               <Progress value={total ? ((total - used) / total) * 100 : 0} />
-              <p className="text-xs text-muted-foreground">{used} crédits consommés au total</p>
+              <p className="text-xs text-muted-foreground">
+                {t("dashboard.creditsConsumed", { credits: used })}
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <FileText className="size-4" /> Plan actuel
+                <FileText className="size-4" /> {t("dashboard.currentPlan")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="font-display text-3xl font-bold">{limits.label}</p>
               <Button asChild size="sm" variant="outline">
                 <Link to="/pricing">
-                  Comparer les plans <ArrowRight className="ml-1.5 size-3.5" />
+                  {t("dashboard.comparePlans")} <ArrowRight className="ml-1.5 size-3.5" />
                 </Link>
               </Button>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Documents</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {t("dashboard.documents")}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="font-display text-3xl font-bold">
                 {documents.data?.length ?? 0}
                 <span className="ml-2 text-sm font-normal text-muted-foreground">
-                  {limits.documents === Infinity ? "· illimités" : `/ ${limits.documents}`}
+                  {limits.documents === Infinity ? `· ${t("dashboard.unlimited")}` : `/ ${limits.documents}`}
                 </span>
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                Historique conservé{" "}
-                {limits.historyDays === Infinity ? "sans limite" : `${limits.historyDays} jours`}
+                {limits.historyDays === Infinity
+                  ? t("dashboard.historyRetention")
+                  : t("dashboard.historyRetentionDays", { days: limits.historyDays })}
               </p>
             </CardContent>
           </Card>
@@ -141,7 +146,7 @@ function Dashboard() {
         <div className="grid gap-5 lg:grid-cols-2">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Documents récents</CardTitle>
+              <CardTitle className="text-base">{t("dashboard.recentDocuments")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {documents.data?.length ? (
@@ -154,15 +159,15 @@ function Dashboard() {
                   >
                     <span className="truncate">{doc.title}</span>
                     <span className="ml-3 shrink-0 font-mono text-xs text-muted-foreground">
-                      {doc.word_count} mots
+                      {t("dashboard.words", { count: doc.word_count })}
                     </span>
                   </Link>
                 ))
               ) : (
                 <p className="px-3 py-6 text-sm text-muted-foreground">
-                  Aucun document.{" "}
+                  {t("dashboard.noDocuments")}{" "}
                   <Link to="/documents" className="text-primary hover:underline">
-                    Importez-en un
+                    {t("dashboard.importOne")}
                   </Link>
                   .
                 </p>
@@ -171,7 +176,7 @@ function Dashboard() {
           </Card>
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Dernières analyses</CardTitle>
+              <CardTitle className="text-base">{t("dashboard.recentAnalyses")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {analyses.data?.length ? (
@@ -180,34 +185,36 @@ function Dashboard() {
                     key={item.id}
                     className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm"
                   >
-                    <span className="truncate">{item.title ?? featureLabel(item.kind)}</span>
+                    <span className="truncate">{item.title ?? t(featureLabelKey(item.kind))}</span>
                     <Badge variant="secondary" className="shrink-0 font-mono text-xs">
-                      {item.credits_cost} cr.
+                      {t("credits.short", { credits: item.credits_cost })}
                     </Badge>
                   </div>
                 ))
               ) : (
-                <p className="px-3 py-6 text-sm text-muted-foreground">
-                  Vos analyses IA apparaîtront ici.
-                </p>
+                <p className="px-3 py-6 text-sm text-muted-foreground">{t("dashboard.noAnalyses")}</p>
               )}
             </CardContent>
           </Card>
         </div>
 
         <div className="space-y-4">
-          <h2 className="font-display text-xl font-semibold">Analyses disponibles</h2>
+          <h2 className="font-display text-xl font-semibold">{t("dashboard.availableAnalyses")}</h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {AI_FEATURE_LIST.map((feature) => (
               <Card key={feature.key} className="transition-transform hover:-translate-y-1">
                 <CardContent className="space-y-2 p-5">
                   <div className="flex items-center justify-between">
-                    <p className="font-display font-semibold">{feature.label}</p>
+                    <p className="font-display font-semibold">
+                      {t(featureLabelKey(feature.key))}
+                    </p>
                     <Badge variant="secondary" className="font-mono text-xs">
-                      {feature.credits} cr.
+                      {t("credits.short", { credits: feature.credits })}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">{feature.description}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t(featureDescriptionKey(feature.key))}
+                  </p>
                 </CardContent>
               </Card>
             ))}
