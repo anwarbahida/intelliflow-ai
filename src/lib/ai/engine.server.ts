@@ -1,9 +1,9 @@
 import { AI_FEATURES, type AiFeatureKey } from "./features";
 import { AiError, estimateCost, runAi } from "./provider.server";
 
-const MAX_CONTENT_CHARS = 24_000;
+const MAX_CONTENT_CHARS = 16_000;
 const RATE_WINDOW_MINUTES = 1;
-const RATE_MAX_CALLS = 12;
+const RATE_MAX_CALLS = 30;
 
 type AdminClient = Awaited<
   typeof import("@/integrations/supabase/client.server")

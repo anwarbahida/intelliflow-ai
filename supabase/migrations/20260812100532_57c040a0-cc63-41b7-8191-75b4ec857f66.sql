@@ -247,8 +247,7 @@ CREATE POLICY "admins read audit logs" ON public.audit_logs FOR SELECT TO authen
 INSERT INTO public.plans (code,name,tagline,price_monthly,price_yearly,credits,features,is_featured,sort_order) VALUES
 ('free','Free','Pour découvrir la puissance de l''analyse IA',0,0,50,'["50 crédits IA / mois","5 documents actifs","Résumés et extraction de base","Historique 7 jours","1 projet"]'::jsonb,false,1),
 ('pro','Pro','Pour les indépendants et petites équipes',29,290,1500,'["1 500 crédits IA / mois","Documents illimités","Analyse de risques avancée","Assistant IA illimité","Historique complet","Templates premium","Export PDF & Markdown","Traitement prioritaire"]'::jsonb,true,2),
-('business','Business','Pour les équipes qui traitent des volumes',99,990,6000,'["6 000 crédits IA / mois","Automatisations et lots","Analytics d''équipe","Collaboration & partage","Gestion des membres","Rapports personnalisés","Support prioritaire"]'::jsonb,false,3),
-('enterprise','Enterprise','Sur mesure, sécurité et volumes illimités',0,0,50000,'["Crédits sur mesure","Limites personnalisables","SSO & contrôles avancés","Modèles IA dédiés","SLA et support dédié","Onboarding accompagné"]'::jsonb,false,4);
+('business','Business','Pour les équipes qui traitent des volumes',99,990,6000,'["6 000 crédits IA / mois","Automatisations et lots","Analytics d''équipe","Collaboration & partage","Gestion des membres","Rapports personnalisés","Support prioritaire"]'::jsonb,false,3);
 
 -- SEED TEMPLATES
 INSERT INTO public.templates (title,description,category,prompt,kind,is_premium) VALUES

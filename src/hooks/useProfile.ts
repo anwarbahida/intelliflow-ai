@@ -53,8 +53,6 @@ export function planLimits(plan: string | undefined) {
       return { documents: Infinity, historyDays: Infinity, premium: true, label: "Pro" };
     case "business":
       return { documents: Infinity, historyDays: Infinity, premium: true, label: "Business" };
-    case "enterprise":
-      return { documents: Infinity, historyDays: Infinity, premium: true, label: "Enterprise" };
     default:
       return { documents: 5, historyDays: 7, premium: false, label: "Free" };
   }

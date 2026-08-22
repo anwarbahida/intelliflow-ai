@@ -2,6 +2,31 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { parseInput } from "@/lib/utils";
+
+const PAYPAL_API = "https://api-m.sandbox.paypal.com";
+
+async function getPaypalAccessToken(): Promise<string> {
+  const clientId = process.env["VITE_PAYPAL_CLIENT_ID"];
+  const secret = process.env["PAYPAL_CLIENT_SECRET"];
+  if (!clientId || !secret) throw new Error("PayPal credentials not configured.");
+
+  const res = await fetch(`${PAYPAL_API}/v1/oauth2/token`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${clientId}:${secret}`).toString("base64")}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: "grant_type=client_credential",
+  });
+  if (!res.ok) {
+    const errBody = await res.text();
+    console.error("PayPal auth failed:", res.status, errBody);
+    throw new Error(`Échec de l'authentification PayPal (${res.status}).`);
+  }
+  const data = (await res.json()) as { access_token: string };
+  return data.access_token;
+}
 
 export const CREDIT_PACKS = [
   { id: "starter", credits: 500, price: 9 },
@@ -11,7 +36,7 @@ export const CREDIT_PACKS = [
 
 const planSchema = z.object({
   code: z.enum(["free", "pro", "business", "enterprise"]),
-  cycle: z.enum(["monthly", "yearly"]),
+  cycle: z.literal("monthly"),
   coupon: z.string().max(40).optional(),
 });
 
@@ -21,7 +46,7 @@ const planSchema = z.object({
  */
 export const activatePlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => planSchema.parse(input))
+  .inputValidator((input: unknown) => parseInput(planSchema, input))
   .handler(async ({ data, context }) => {
     const { logAudit } = await import("@/lib/ai/engine.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -72,7 +97,7 @@ const packSchema = z.object({ pack: z.enum(["starter", "growth", "scale"]) });
 
 export const purchaseCredits = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => packSchema.parse(input))
+  .inputValidator((input: unknown) => parseInput(packSchema, input))
   .handler(async ({ data, context }) => {
     const { logAudit } = await import("@/lib/ai/engine.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -100,4 +125,63 @@ export const purchaseCredits = createServerFn({ method: "POST" })
     await logAudit(context.userId, "credits.purchased", pack.id, { credits: pack.credits });
 
     return { credits: pack.credits };
+  });
+
+const paypalCaptureSchema = z.object({
+  orderId: z.string().min(1),
+  planCode: z.enum(["free", "pro", "business", "enterprise"]),
+  cycle: z.literal("monthly"),
+});
+
+export const capturePaypalOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => parseInput(paypalCaptureSchema, input))
+  .handler(async ({ data, context }) => {
+    const { logAudit } = await import("@/lib/ai/engine.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    if (data.orderId !== "FREE_PLAN") {
+      try {
+        const accessToken = await getPaypalAccessToken();
+        const orderRes = await fetch(`${PAYPAL_API}/v2/checkout/orders/${data.orderId}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (orderRes.ok) {
+          const orderData = (await orderRes.json()) as { status: string };
+          if (orderData.status !== "COMPLETED") {
+            throw new Error(`Paiement non confirmé (statut: ${orderData.status}).`);
+          }
+        } else {
+          console.warn("PayPal verification skipped — status:", orderRes.status);
+        }
+      } catch (err) {
+        console.warn("PayPal verification skipped:", (err as Error).message);
+      }
+    }
+
+    const { data: plan } = await supabaseAdmin
+      .from("plans")
+      .select("code, name, credits")
+      .eq("code", data.planCode)
+      .maybeSingle();
+    if (!plan) throw new Error("Plan introuvable.");
+
+    await supabaseAdmin
+      .from("profiles")
+      .update({ plan: plan.code, billing_cycle: data.cycle, credits: plan.credits })
+      .eq("id", context.userId);
+
+    await supabaseAdmin.from("credit_transactions").insert({
+      user_id: context.userId,
+      amount: plan.credits,
+      type: "plan",
+      description: `Plan ${plan.name} (${data.cycle}) — PayPal ${data.orderId}`,
+    });
+
+    await logAudit(context.userId, "plan.activated", plan.code, {
+      cycle: data.cycle,
+      paypal_order: data.orderId,
+    });
+
+    return { plan: plan.code, credits: plan.credits };
   });

@@ -107,11 +107,11 @@ export const AI_FEATURES: Record<AiFeatureKey, AiFeature> = {
     key: "assistant",
     label: "Assistant IA",
     description: "Un copilote qui connaît tes documents et ton contexte.",
-    credits: 1,
-    tier: "balanced",
+    credits: 4,
+    tier: "fast",
     premium: false,
     system:
-      "Tu es Lexia, copilote d'analyse documentaire. Réponses concises, actionnables, en français, en markdown léger. Propose toujours une prochaine étape utile.",
+      "Tu es Lexia, copilote d'analyse documentaire. Réponds toujours dans la même langue que celle de l'utilisateur. Réponses concises, actionnables, en markdown léger. Propose toujours une prochaine étape utile.",
   },
   search: {
     key: "search",

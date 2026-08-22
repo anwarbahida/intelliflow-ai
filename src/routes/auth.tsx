@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/site/SiteChrome";
 import { useI18n } from "@/lib/i18n";
-import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth")({
@@ -25,7 +24,8 @@ export const Route = createFileRoute("/auth")({
       { title: "Connexion — Lexia" },
       {
         name: "description",
-        content: "Connectez-vous à Lexia pour analyser vos documents avec l'IA et suivre vos crédits.",
+        content:
+          "Connectez-vous à Lexia pour analyser vos documents avec l'IA et suivre vos crédits.",
       },
       { property: "og:title", content: "Connexion — Lexia" },
       { property: "og:description", content: "Accédez à votre espace d'analyse documentaire IA." },
@@ -84,16 +84,16 @@ function AuthPage() {
 
   const google = async () => {
     setLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
     });
-    if (result.error) {
+    if (error) {
       setLoading(false);
       toast.error(t("auth.googleError"));
-      return;
     }
-    if (result.redirected) return;
-    navigate({ to: safePath(redirect) });
   };
 
   return (

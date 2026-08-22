@@ -6,16 +6,21 @@ import {
   FileSearch,
   FileText,
   Lock,
+  Loader2,
+  Send,
   ShieldCheck,
   Sparkles,
   Zap,
 } from "lucide-react";
+import { useState } from "react";
 
+import { Markdown } from "@/components/Markdown";
 import { PricingPlans } from "@/components/site/PricingPlans";
 import { SiteFooter, SiteHeader } from "@/components/site/SiteChrome";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Accordion,
   AccordionContent,
@@ -62,6 +67,27 @@ function Landing() {
   const faqItems = translations[lang].landing.faqItems;
   const demoLines = tList("landing.demoLines");
   const demoRiskLabels = tList("landing.demoRiskLabels");
+
+  const [demoText, setDemoText] = useState("");
+  const [demoResult, setDemoResult] = useState("");
+  const [demoLoading, setDemoLoading] = useState(false);
+  const [demoError, setDemoError] = useState(false);
+
+  const runDemo = async () => {
+    if (demoText.trim().length < 40) return;
+    setDemoLoading(true);
+    setDemoError(false);
+    setDemoResult("");
+    try {
+      const { runPublicDemo } = await import("@/lib/ai.functions");
+      const res = await runPublicDemo({ data: { text: demoText } });
+      setDemoResult(res.text ?? "");
+    } catch {
+      setDemoError(true);
+    } finally {
+      setDemoLoading(false);
+    }
+  };
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
@@ -143,6 +169,57 @@ function Landing() {
                 </CardContent>
               </Card>
             </div>
+          </div>
+        </section>
+
+        {/* Interactive Demo */}
+        <section id="demo" className="border-t border-border/60 bg-surface/40 px-4 py-24 sm:px-6">
+          <div className="mx-auto max-w-3xl">
+            <div className="text-center">
+              <h2 className="font-display text-3xl font-bold sm:text-4xl">
+                {t("landing.demoTitle")}
+              </h2>
+              <p className="mt-4 text-muted-foreground">{t("landing.demoSubtitle")}</p>
+            </div>
+            <Card className="mt-12 glass-panel">
+              <CardContent className="space-y-4 p-6">
+                <Textarea
+                  value={demoText}
+                  onChange={(e) => setDemoText(e.target.value)}
+                  placeholder={t("landing.demoPlaceholder")}
+                  rows={6}
+                  className="resize-none text-sm"
+                />
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">{t("landing.demoNote")}</p>
+                  <Button
+                    onClick={runDemo}
+                    disabled={demoLoading || demoText.trim().length < 40}
+                    size="sm"
+                  >
+                    {demoLoading ? (
+                      <Loader2 className="mr-2 size-4 animate-spin" />
+                    ) : (
+                      <Send className="mr-2 size-4" />
+                    )}
+                    {demoLoading ? t("landing.demoRunning") : t("landing.demoRun")}
+                  </Button>
+                </div>
+                {demoError && (
+                  <p className="text-sm text-destructive">{t("landing.demoError")}</p>
+                )}
+                {demoResult && (
+                  <div className="rounded-lg border border-border/60 bg-background/60 p-5">
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t("landing.demoResultTitle")}
+                    </p>
+                    <div className="prose-sm prose-neutral dark:prose-invert max-w-none">
+                      <Markdown content={demoResult} />
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </section>
 

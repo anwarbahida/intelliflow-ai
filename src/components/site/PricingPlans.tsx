@@ -1,14 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Check, Sparkles } from "lucide-react";
-import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, translations, type Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export type Plan = {
@@ -22,6 +21,17 @@ export type Plan = {
   features: unknown;
   is_featured: boolean;
 };
+
+type PlanTranslation = { name: string; tagline: string; features: string[] };
+
+function getPlanTranslation(code: string, lang: Locale): PlanTranslation {
+  const rec = (translations[lang] as Record<string, unknown>)["plans"] as
+    | Record<string, PlanTranslation>
+    | undefined;
+  if (rec?.[code]) return rec[code];
+  const fb = (translations.fr as Record<string, unknown>)["plans"] as Record<string, PlanTranslation>;
+  return fb?.[code] ?? { name: code, tagline: "", features: [] };
+}
 
 export function usePlans() {
   return useQuery({
@@ -47,37 +57,18 @@ export function PricingPlans({
   currentPlan,
   compact = false,
 }: {
-  onSelect?: (code: string, cycle: "monthly" | "yearly") => void;
+  onSelect?: (code: string) => void;
   currentPlan?: string;
   compact?: boolean;
 }) {
-  const [cycle, setCycle] = useState<"monthly" | "yearly">("monthly");
   const { data: plans, isLoading } = usePlans();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col items-center gap-3">
-        <div className="inline-flex items-center rounded-full border border-border bg-card p-1">
-          {(["monthly", "yearly"] as const).map((value) => (
-            <button
-              key={value}
-              onClick={() => setCycle(value)}
-              className={cn(
-                "rounded-full px-4 py-1.5 text-sm font-medium transition-all",
-                cycle === value
-                  ? "bg-gradient-primary text-primary-foreground shadow-soft"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {value === "monthly" ? t("pricing.monthlyLabel") : t("pricing.yearlyLabel")}
-            </button>
-          ))}
-        </div>
-        <p className="text-xs text-muted-foreground">
-          {cycle === "yearly" ? t("pricing.yearlyNote") : t("pricing.monthlyNote")}
-        </p>
-      </div>
+      <p className="text-center text-xs text-muted-foreground">
+        {t("pricing.monthlyNote")}
+      </p>
 
       <div className="grid gap-5 lg:grid-cols-4">
         {isLoading &&
@@ -94,9 +85,10 @@ export function PricingPlans({
           ))}
 
         {plans?.map((plan) => {
-          const price = cycle === "monthly" ? plan.price_monthly : plan.price_yearly;
-          const isEnterprise = plan.code === "enterprise";
+          const tr = getPlanTranslation(plan.code, lang);
+          const price = plan.price_monthly;
           const isCurrent = currentPlan === plan.code;
+          const displayFeatures = tr.features.length > 0 ? tr.features : planFeatures(plan);
           return (
             <Card
               key={plan.id}
@@ -110,20 +102,18 @@ export function PricingPlans({
               )}
               <CardHeader className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="font-display text-lg font-semibold">{plan.name}</span>
+                  <span className="font-display text-lg font-semibold">{tr.name || plan.name}</span>
                   {plan.is_featured && <Badge className="bg-gradient-primary border-0">{t("pricing.recommended")}</Badge>}
                   {isCurrent && !plan.is_featured && <Badge variant="secondary">{t("pricing.currentPlan")}</Badge>}
                 </div>
-                <p className="min-h-10 text-sm text-muted-foreground">{plan.tagline}</p>
+                <p className="min-h-10 text-sm text-muted-foreground">{tr.tagline || plan.tagline}</p>
                 <div className="flex items-end gap-1">
                   <span className="font-display text-4xl font-bold">
-                    {isEnterprise ? t("pricing.customQuote") : `${price} €`}
+                    {price} $
                   </span>
-                  {!isEnterprise && (
-                    <span className="pb-1 text-sm text-muted-foreground">
-                      {cycle === "monthly" ? t("pricing.perMonth") : t("pricing.perYear")}
-                    </span>
-                  )}
+                  <span className="pb-1 text-sm text-muted-foreground">
+                    {t("pricing.perMonth")}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1.5 text-sm font-medium text-primary">
                   <Sparkles className="size-3.5" />
@@ -132,7 +122,7 @@ export function PricingPlans({
               </CardHeader>
               <CardContent className="flex flex-1 flex-col gap-5">
                 <ul className="flex-1 space-y-2.5">
-                  {planFeatures(plan)
+                  {displayFeatures
                     .slice(0, compact ? 5 : 12)
                     .map((feature) => (
                       <li key={feature} className="flex gap-2 text-sm text-muted-foreground">
@@ -143,24 +133,29 @@ export function PricingPlans({
                 </ul>
                 {onSelect ? (
                   <Button
-                    onClick={() => onSelect(plan.code, cycle)}
+                    onClick={() => onSelect(plan.code)}
                     variant={plan.is_featured ? "default" : "outline"}
                     disabled={isCurrent}
                     className="w-full"
                   >
                     {isCurrent
                       ? t("pricing.active")
-                      : isEnterprise
-                        ? t("pricing.talkToExpert")
-                        : t("pricing.choose", { name: plan.name })}
+                      : t("pricing.choose", { name: tr.name || plan.name })}
                   </Button>
                 ) : (
                   <Button asChild variant={plan.is_featured ? "default" : "outline"} className="w-full">
-                    <Link to="/auth" search={{ mode: "signup", redirect: "" }}>
-                      {plan.code === "free"
-                        ? t("pricing.startFree")
-                        : t("pricing.choose", { name: plan.name })}
-                    </Link>
+                    {plan.code === "free" ? (
+                      <Link to="/auth" search={{ mode: "signup", redirect: "" }}>
+                        {t("pricing.startFree")}
+                      </Link>
+                    ) : (
+                      <Link
+                        to="/checkout"
+                        search={{ plan: plan.code, cycle: "monthly" }}
+                      >
+                        {t("pricing.choose", { name: tr.name || plan.name })}
+                      </Link>
+                    )}
                   </Button>
                 )}
               </CardContent>

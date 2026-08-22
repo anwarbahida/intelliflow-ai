@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { ACCEPTED_EXTENSIONS, MAX_FILE_SIZE, parseFile } from "@/lib/fileParser";
 import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/documents/")({
@@ -45,6 +46,7 @@ function DocumentsPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [fileName, setFileName] = useState<string | null>(null);
+  const [mimeType, setMimeType] = useState("text/plain");
   const { t } = useI18n();
 
   const documents = useQuery({
@@ -72,7 +74,7 @@ function DocumentsPage() {
           user_id: userId,
           title: title.trim() || fileName || "Document sans titre",
           file_name: fileName,
-          mime_type: "text/plain",
+          mime_type: mimeType,
           size_bytes: new TextEncoder().encode(clean).length,
           content: clean,
           word_count: clean.split(/\s+/).filter(Boolean).length,
@@ -88,6 +90,7 @@ function DocumentsPage() {
       setTitle("");
       setContent("");
       setFileName(null);
+      setMimeType("text/plain");
       queryClient.invalidateQueries({ queryKey: ["documents"] });
       navigate({ to: "/documents/$id", params: { id } });
     },
@@ -107,14 +110,19 @@ function DocumentsPage() {
   });
 
   async function onPickFile(file: File) {
-    if (file.size > 1_500_000) {
+    if (file.size > MAX_FILE_SIZE) {
       toast.error(t("documents.fileTooBig"));
       return;
     }
-    const text = await file.text();
-    setFileName(file.name);
-    if (!title) setTitle(file.name.replace(/\.[^.]+$/, ""));
-    setContent(text.slice(0, 60_000));
+    try {
+      const { text, mimeType: mime } = await parseFile(file);
+      setFileName(file.name);
+      setMimeType(mime);
+      if (!title) setTitle(file.name.replace(/\.[^.]+$/, ""));
+      setContent(text.slice(0, 60_000));
+    } catch {
+      toast.error(t("documents.parseError"));
+    }
   }
 
   return (
@@ -165,7 +173,7 @@ function DocumentsPage() {
                   <input
                     ref={fileRef}
                     type="file"
-                    accept=".txt,.md,.csv,.json,text/plain"
+                    accept={ACCEPTED_EXTENSIONS}
                     className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
@@ -173,7 +181,7 @@ function DocumentsPage() {
                     }}
                   />
                   <Button type="button" variant="outline" onClick={() => fileRef.current?.click()}>
-                    {t("documents.importTextFile")}
+                    {t("documents.importFile")}
                   </Button>
                   {fileName && <span className="text-xs text-muted-foreground">{fileName}</span>}
                   <Button

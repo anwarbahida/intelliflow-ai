@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { parseInput } from "@/lib/utils";
 
 const analyzeSchema = z.object({
   documentId: z.string().uuid(),
@@ -11,7 +12,7 @@ const analyzeSchema = z.object({
 
 export const analyzeDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => analyzeSchema.parse(input))
+  .inputValidator((input: unknown) => parseInput(analyzeSchema, input))
   .handler(async ({ data, context }) => {
     const { runFeature } = await import("@/lib/ai/engine.server");
     const { AI_FEATURES } = await import("@/lib/ai/features");
@@ -56,17 +57,17 @@ export const analyzeDocument = createServerFn({ method: "POST" })
   });
 
 const chatSchema = z.object({
-  message: z.string().min(1).max(4000),
+  message: z.string().min(1).max(50000),
   documentId: z.string().uuid().nullable().optional(),
   history: z
-    .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(4000) }))
-    .max(12)
+    .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(50000) }))
+    .max(20)
     .optional(),
 });
 
 export const chatAssistant = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => chatSchema.parse(input))
+  .inputValidator((input: unknown) => parseInput(chatSchema, input))
   .handler(async ({ data, context }) => {
     const { enforceRateLimit, getProfile, chargeCredits } = await import("@/lib/ai/engine.server");
     const { runAi } = await import("@/lib/ai/provider.server");
@@ -84,26 +85,31 @@ export const chatAssistant = createServerFn({ method: "POST" })
         .select("title, content")
         .eq("id", data.documentId)
         .maybeSingle();
-      if (doc) docContext = `Document actif « ${doc.title} » :\n${doc.content.slice(0, 16000)}`;
+      if (doc) docContext = `Document actif « ${doc.title} » :\n${doc.content.slice(0, 12000)}`;
     } else {
       const { data: docs } = await context.supabase
         .from("documents")
         .select("title, summary")
         .order("created_at", { ascending: false })
-        .limit(8);
+        .limit(5);
       if (docs?.length) {
         docContext = `Documents récents de l'utilisateur :\n${docs
-          .map((d) => `- ${d.title}${d.summary ? ` : ${d.summary.slice(0, 400)}` : ""}`)
+          .map((d) => `- ${d.title}${d.summary ? ` : ${d.summary.slice(0, 200)}` : ""}`)
           .join("\n")}`;
       }
     }
 
+    const systemPrompt = [
+      AI_FEATURES.assistant.system,
+      `Utilisateur : ${profile.full_name ?? "client"} (plan ${profile.plan}).`,
+      docContext.slice(0, 6000),
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+
     const result = await runAi(
       [
-        {
-          role: "system",
-          content: `${AI_FEATURES.assistant.system}\n\nUtilisateur : ${profile.full_name ?? "client"} (plan ${profile.plan}).\n${docContext}`,
-        },
+        { role: "system", content: systemPrompt },
         ...(data.history ?? []).map((m) => ({ role: m.role, content: m.content }) as const),
         { role: "user" as const, content: data.message },
       ],
@@ -136,7 +142,7 @@ const searchSchema = z.object({ query: z.string().min(2).max(400) });
 
 export const smartSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => searchSchema.parse(input))
+  .inputValidator((input: unknown) => parseInput(searchSchema, input))
   .handler(async ({ data, context }) => {
     const { runFeature } = await import("@/lib/ai/engine.server");
     const { data: docs } = await context.supabase
@@ -162,7 +168,7 @@ export const smartSearch = createServerFn({ method: "POST" })
 const demoSchema = z.object({ text: z.string().min(40).max(4000) });
 
 export const runPublicDemo = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => demoSchema.parse(input))
+  .inputValidator((input: unknown) => parseInput(demoSchema, input))
   .handler(async ({ data }) => {
     const { runAi } = await import("@/lib/ai/provider.server");
     const result = await runAi(
@@ -170,7 +176,7 @@ export const runPublicDemo = createServerFn({ method: "POST" })
         {
           role: "system",
           content:
-            "Tu es Lexia, moteur d'analyse documentaire. Analyse l'extrait fourni et rends en markdown court : 3 points clés, les données chiffrées détectées, 1 risque, 1 action recommandée. Maximum 200 mots.",
+            "Tu es Lexia, moteur d'analyse documentaire. Analyse l'extrait fourni et rends en markdown court : 3 points clés, les données chiffrées détectées, 1 risque, 1 action recommandée. Maximum 200 mots. Réponds dans la même langue que le texte fourni.",
         },
         { role: "user", content: data.text },
       ],

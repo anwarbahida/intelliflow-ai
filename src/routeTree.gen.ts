@@ -13,8 +13,16 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AssistantRouteImport } from './routes/assistant'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as MyPricingRouteImport } from './routes/my-pricing'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminActivityRouteImport } from './routes/admin.activity'
+import { Route as AdminUsageRouteImport } from './routes/admin.usage'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as DocumentsIndexRouteImport } from './routes/documents.index'
 import { Route as DocumentsIdRouteImport } from './routes/documents.$id'
 
@@ -38,15 +46,55 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyPricingRoute = MyPricingRouteImport.update({
+  id: '/my-pricing',
+  path: '/my-pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminActivityRoute = AdminActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsageRoute = AdminUsageRouteImport.update({
+  id: '/usage',
+  path: '/usage',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/callback',
+  path: '/callback',
+  getParentRoute: () => AuthRoute,
 } as any)
 const DocumentsIndexRoute = DocumentsIndexRouteImport.update({
   id: '/documents/',
@@ -61,33 +109,56 @@ const DocumentsIdRoute = DocumentsIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/assistant': typeof AssistantRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
+  '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
+  '/my-pricing': typeof MyPricingRoute
   '/pricing': typeof PricingRoute
+  '/profile': typeof ProfileRoute
+  '/admin/activity': typeof AdminActivityRoute
+  '/admin/usage': typeof AdminUsageRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/documents/$id': typeof DocumentsIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/documents/': typeof DocumentsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/assistant': typeof AssistantRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
+  '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
+  '/my-pricing': typeof MyPricingRoute
   '/pricing': typeof PricingRoute
+  '/profile': typeof ProfileRoute
+  '/admin/activity': typeof AdminActivityRoute
+  '/admin/usage': typeof AdminUsageRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/documents/$id': typeof DocumentsIdRoute
+  '/admin': typeof AdminIndexRoute
   '/documents': typeof DocumentsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/assistant': typeof AssistantRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
+  '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
+  '/my-pricing': typeof MyPricingRoute
   '/pricing': typeof PricingRoute
+  '/profile': typeof ProfileRoute
+  '/admin/activity': typeof AdminActivityRoute
+  '/admin/usage': typeof AdminUsageRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/documents/$id': typeof DocumentsIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/documents/': typeof DocumentsIndexRoute
 }
 export interface FileRouteTypes {
@@ -97,19 +168,34 @@ export interface FileRouteTypes {
     | '/admin'
     | '/assistant'
     | '/auth'
+    | '/checkout'
     | '/dashboard'
+    | '/my-pricing'
     | '/pricing'
+    | '/profile'
+    | '/admin/activity'
+    | '/admin/usage'
+    | '/admin/users'
+    | '/auth/callback'
     | '/documents/$id'
+    | '/admin/'
     | '/documents/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/assistant'
     | '/auth'
+    | '/checkout'
     | '/dashboard'
+    | '/my-pricing'
     | '/pricing'
+    | '/profile'
+    | '/admin/activity'
+    | '/admin/usage'
+    | '/admin/users'
+    | '/auth/callback'
     | '/documents/$id'
+    | '/admin'
     | '/documents'
   id:
     | '__root__'
@@ -117,19 +203,30 @@ export interface FileRouteTypes {
     | '/admin'
     | '/assistant'
     | '/auth'
+    | '/checkout'
     | '/dashboard'
+    | '/my-pricing'
     | '/pricing'
+    | '/profile'
+    | '/admin/activity'
+    | '/admin/usage'
+    | '/admin/users'
+    | '/auth/callback'
     | '/documents/$id'
+    | '/admin/'
     | '/documents/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AssistantRoute: typeof AssistantRoute
-  AuthRoute: typeof AuthRoute
+  AuthRoute: typeof AuthRouteWithChildren
+  CheckoutRoute: typeof CheckoutRoute
   DashboardRoute: typeof DashboardRoute
+  MyPricingRoute: typeof MyPricingRoute
   PricingRoute: typeof PricingRoute
+  ProfileRoute: typeof ProfileRoute
   DocumentsIdRoute: typeof DocumentsIdRoute
   DocumentsIndexRoute: typeof DocumentsIndexRoute
 }
@@ -164,11 +261,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-pricing': {
+      id: '/my-pricing'
+      path: '/my-pricing'
+      fullPath: '/my-pricing'
+      preLoaderRoute: typeof MyPricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -177,6 +288,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/activity': {
+      id: '/admin/activity'
+      path: '/activity'
+      fullPath: '/admin/activity'
+      preLoaderRoute: typeof AdminActivityRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/usage': {
+      id: '/admin/usage'
+      path: '/usage'
+      fullPath: '/admin/usage'
+      preLoaderRoute: typeof AdminUsageRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/documents/': {
       id: '/documents/'
@@ -195,13 +348,42 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminActivityRoute: typeof AdminActivityRoute
+  AdminUsageRoute: typeof AdminUsageRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminActivityRoute: AdminActivityRoute,
+  AdminUsageRoute: AdminUsageRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface AuthRouteChildren {
+  AuthCallbackRoute: typeof AuthCallbackRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthCallbackRoute: AuthCallbackRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   AssistantRoute: AssistantRoute,
-  AuthRoute: AuthRoute,
+  AuthRoute: AuthRouteWithChildren,
+  CheckoutRoute: CheckoutRoute,
   DashboardRoute: DashboardRoute,
+  MyPricingRoute: MyPricingRoute,
   PricingRoute: PricingRoute,
+  ProfileRoute: ProfileRoute,
   DocumentsIdRoute: DocumentsIdRoute,
   DocumentsIndexRoute: DocumentsIndexRoute,
 }
