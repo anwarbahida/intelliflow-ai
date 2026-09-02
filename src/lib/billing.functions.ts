@@ -141,21 +141,39 @@ export const capturePaypalOrder = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     if (data.orderId !== "FREE_PLAN") {
-      try {
-        const accessToken = await getPaypalAccessToken();
-        const orderRes = await fetch(`${PAYPAL_API}/v2/checkout/orders/${data.orderId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        if (orderRes.ok) {
-          const orderData = (await orderRes.json()) as { status: string };
-          if (orderData.status !== "COMPLETED") {
-            throw new Error(`Paiement non confirmé (statut: ${orderData.status}).`);
-          }
-        } else {
-          console.warn("PayPal verification skipped — status:", orderRes.status);
+      const accessToken = await getPaypalAccessToken();
+      const orderRes = await fetch(`${PAYPAL_API}/v2/checkout/orders/${data.orderId}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!orderRes.ok) {
+        const errBody = await orderRes.text();
+        console.error("PayPal order fetch failed:", orderRes.status, errBody);
+        throw new Error(`Impossible de vérifier la commande PayPal (${orderRes.status}).`);
+      }
+      const orderData = (await orderRes.json()) as {
+        status: string;
+        purchase_units?: Array<{ amount?: { value?: string; currency_code?: string } }>;
+      };
+      if (orderData.status !== "COMPLETED") {
+        throw new Error(`Paiement non confirmé (statut: ${orderData.status}).`);
+      }
+      const { data: plan } = await supabaseAdmin
+        .from("plans")
+        .select("code, name, credits, price_monthly")
+        .eq("code", data.planCode)
+        .maybeSingle();
+      const paidAmount = orderData.purchase_units?.[0]?.amount?.value;
+      const currency = orderData.purchase_units?.[0]?.amount?.currency_code;
+      if (paidAmount && plan?.price_monthly) {
+        const expected = (plan.price_monthly / 100).toFixed(2);
+        if (paidAmount !== expected) {
+          throw new Error(
+            `Montant incorrect: reçu ${paidAmount} ${currency}, attendu ${expected} EUR.`,
+          );
         }
-      } catch (err) {
-        console.warn("PayPal verification skipped:", (err as Error).message);
+      }
+      if (currency && currency !== "EUR") {
+        throw new Error(`Devise incorrecte: ${currency}. Attendu EUR.`);
       }
     }
 

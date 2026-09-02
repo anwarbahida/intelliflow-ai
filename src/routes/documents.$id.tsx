@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, Download, FileDown, Loader2, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -19,6 +19,42 @@ import { useI18n, featureLabelKey } from "@/lib/i18n";
 import { AI_FEATURES, type AiFeatureKey } from "@/lib/ai/features";
 
 const RUNNABLE: AiFeatureKey[] = ["summary", "extract", "qa", "risk", "actions", "finance", "report"];
+
+function exportMarkdown(doc: { title: string; content: string; created_at: string }, analyses: Array<{ title: string; kind: string; result: string; created_at: string }> | undefined) {
+  let md = `# ${doc.title}\n\n`;
+  md += `**Importé le :** ${new Date(doc.created_at).toLocaleDateString()}\n\n`;
+  md += `---\n\n## Contenu\n\n${doc.content}\n\n`;
+  if (analyses?.length) {
+    md += `---\n\n## Analyses IA\n\n`;
+    for (const a of analyses) {
+      md += `### ${a.title}\n\n*${new Date(a.created_at).toLocaleString()}*\n\n${a.result}\n\n`;
+    }
+  }
+  const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${doc.title.replace(/[^a-zA-Z0-9À-ÿ_-]/g, "_")}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportPdf(doc: { title: string; content: string; created_at: string }, analyses: Array<{ title: string; kind: string; result: string; created_at: string }> | undefined) {
+  let txt = `${doc.title}\n\nImporté le : ${new Date(doc.created_at).toLocaleDateString()}\n\n---\n\nContenu:\n${doc.content}\n\n`;
+  if (analyses?.length) {
+    txt += `---\n\nAnalyses IA:\n\n`;
+    for (const a of analyses) {
+      txt += `${a.title} (${new Date(a.created_at).toLocaleString()})\n${a.result}\n\n`;
+    }
+  }
+  const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${doc.title.replace(/[^a-zA-Z0-9À-ÿ_-]/g, "_")}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export const Route = createFileRoute("/documents/$id")({
   ssr: false,
@@ -141,6 +177,28 @@ function DocumentDetail() {
                 date: new Date(doc.data.created_at).toLocaleDateString(),
               })}
             </span>
+            <div className="ml-auto flex gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  exportMarkdown(doc.data!, analyses.data)
+                }
+              >
+                <FileDown className="mr-1.5 size-3.5" />
+                {t("documentDetail.exportMd")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  exportPdf(doc.data!, analyses.data)
+                }
+              >
+                <Download className="mr-1.5 size-3.5" />
+                {t("documentDetail.exportPdf")}
+              </Button>
+            </div>
           </div>
         </div>
 

@@ -167,9 +167,31 @@ export const smartSearch = createServerFn({ method: "POST" })
 
 const demoSchema = z.object({ text: z.string().min(40).max(4000) });
 
+const demoRateLimit = new Map<string, number[]>();
+const DEMO_RATE_WINDOW = 60_000;
+const DEMO_RATE_MAX = 3;
+
+function enforceDemoRateLimit(ip: string) {
+  const now = Date.now();
+  const timestamps = (demoRateLimit.get(ip) ?? []).filter((t) => now - t < DEMO_RATE_WINDOW);
+  if (timestamps.length >= DEMO_RATE_MAX) {
+    throw new Error("Trop de requêtes. Réessayez dans une minute.");
+  }
+  timestamps.push(now);
+  demoRateLimit.set(ip, timestamps);
+}
+
 export const runPublicDemo = createServerFn({ method: "POST" })
+  .validator(({ request }: { request: Request }) => {
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      request.headers.get("x-real-ip") ??
+      "unknown";
+    return { ip };
+  })
   .inputValidator((input: unknown) => parseInput(demoSchema, input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    enforceDemoRateLimit((context as { ip: string }).ip);
     const { runAi } = await import("@/lib/ai/provider.server");
     const result = await runAi(
       [

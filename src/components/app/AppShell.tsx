@@ -8,8 +8,10 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Search,
   ShieldCheck,
   Sparkles,
+  SquareStack,
   User,
   Users,
 } from "lucide-react";
@@ -45,6 +47,9 @@ const userNav: NavItem[] = [
   { labelKey: "nav.dashboard", to: "/dashboard", icon: LayoutDashboard },
   { labelKey: "nav.documents", to: "/documents", icon: FileText },
   { labelKey: "nav.assistant", to: "/assistant", icon: Bot },
+  { labelKey: "nav.search", to: "/search", icon: Search },
+  { labelKey: "nav.templates", to: "/templates", icon: SquareStack },
+  { labelKey: "nav.billing", to: "/billing", icon: CreditCard },
   { labelKey: "nav.pricing", to: "/my-pricing", icon: CreditCard },
 ];
 

@@ -13,11 +13,14 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AssistantRouteImport } from './routes/assistant'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as BillingRouteImport } from './routes/billing'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as MyPricingRouteImport } from './routes/my-pricing'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as SearchRouteImport } from './routes/search'
+import { Route as TemplatesRouteImport } from './routes/templates'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminActivityRouteImport } from './routes/admin.activity'
 import { Route as AdminUsageRouteImport } from './routes/admin.usage'
@@ -46,6 +49,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BillingRoute = BillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CheckoutRoute = CheckoutRouteImport.update({
   id: '/checkout',
   path: '/checkout',
@@ -69,6 +77,16 @@ const PricingRoute = PricingRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TemplatesRoute = TemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -112,11 +130,14 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/assistant': typeof AssistantRoute
   '/auth': typeof AuthRouteWithChildren
+  '/billing': typeof BillingRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/my-pricing': typeof MyPricingRoute
   '/pricing': typeof PricingRoute
   '/profile': typeof ProfileRoute
+  '/search': typeof SearchRoute
+  '/templates': typeof TemplatesRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/usage': typeof AdminUsageRoute
   '/admin/users': typeof AdminUsersRoute
@@ -129,11 +150,14 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/assistant': typeof AssistantRoute
   '/auth': typeof AuthRouteWithChildren
+  '/billing': typeof BillingRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/my-pricing': typeof MyPricingRoute
   '/pricing': typeof PricingRoute
   '/profile': typeof ProfileRoute
+  '/search': typeof SearchRoute
+  '/templates': typeof TemplatesRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/usage': typeof AdminUsageRoute
   '/admin/users': typeof AdminUsersRoute
@@ -148,11 +172,14 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/assistant': typeof AssistantRoute
   '/auth': typeof AuthRouteWithChildren
+  '/billing': typeof BillingRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/my-pricing': typeof MyPricingRoute
   '/pricing': typeof PricingRoute
   '/profile': typeof ProfileRoute
+  '/search': typeof SearchRoute
+  '/templates': typeof TemplatesRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/usage': typeof AdminUsageRoute
   '/admin/users': typeof AdminUsersRoute
@@ -168,11 +195,14 @@ export interface FileRouteTypes {
     | '/admin'
     | '/assistant'
     | '/auth'
+    | '/billing'
     | '/checkout'
     | '/dashboard'
     | '/my-pricing'
     | '/pricing'
     | '/profile'
+    | '/search'
+    | '/templates'
     | '/admin/activity'
     | '/admin/usage'
     | '/admin/users'
@@ -185,11 +215,14 @@ export interface FileRouteTypes {
     | '/'
     | '/assistant'
     | '/auth'
+    | '/billing'
     | '/checkout'
     | '/dashboard'
     | '/my-pricing'
     | '/pricing'
     | '/profile'
+    | '/search'
+    | '/templates'
     | '/admin/activity'
     | '/admin/usage'
     | '/admin/users'
@@ -203,11 +236,14 @@ export interface FileRouteTypes {
     | '/admin'
     | '/assistant'
     | '/auth'
+    | '/billing'
     | '/checkout'
     | '/dashboard'
     | '/my-pricing'
     | '/pricing'
     | '/profile'
+    | '/search'
+    | '/templates'
     | '/admin/activity'
     | '/admin/usage'
     | '/admin/users'
@@ -222,11 +258,14 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AssistantRoute: typeof AssistantRoute
   AuthRoute: typeof AuthRouteWithChildren
+  BillingRoute: typeof BillingRoute
   CheckoutRoute: typeof CheckoutRoute
   DashboardRoute: typeof DashboardRoute
   MyPricingRoute: typeof MyPricingRoute
   PricingRoute: typeof PricingRoute
   ProfileRoute: typeof ProfileRoute
+  SearchRoute: typeof SearchRoute
+  TemplatesRoute: typeof TemplatesRoute
   DocumentsIdRoute: typeof DocumentsIdRoute
   DocumentsIndexRoute: typeof DocumentsIndexRoute
 }
@@ -259,6 +298,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/billing': {
+      id: '/billing'
+      path: '/billing'
+      fullPath: '/billing'
+      preLoaderRoute: typeof BillingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checkout': {
@@ -294,6 +340,20 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/templates': {
+      id: '/templates'
+      path: '/templates'
+      fullPath: '/templates'
+      preLoaderRoute: typeof TemplatesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -379,11 +439,14 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AssistantRoute: AssistantRoute,
   AuthRoute: AuthRouteWithChildren,
+  BillingRoute: BillingRoute,
   CheckoutRoute: CheckoutRoute,
   DashboardRoute: DashboardRoute,
   MyPricingRoute: MyPricingRoute,
   PricingRoute: PricingRoute,
   ProfileRoute: ProfileRoute,
+  SearchRoute: SearchRoute,
+  TemplatesRoute: TemplatesRoute,
   DocumentsIdRoute: DocumentsIdRoute,
   DocumentsIndexRoute: DocumentsIndexRoute,
 }
